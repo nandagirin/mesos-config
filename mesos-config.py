@@ -26,7 +26,7 @@ mastercount = len(conf['MASTERS'])
 slavecount = len(conf['SLAVES'])
 quorum = int(math.ceil(mastercount / 2))
 
-# Declare variables needed
+# Declare variables needed (zookeeper related)
 zkaddr = conf['MASTERS'][0]['ipaddr'] + ':2181'
 zoocfg = 'server.1=' + conf['MASTERS'][0]['ipaddr'] + ':2888:3888'
 if mastercount > 1:
@@ -44,7 +44,7 @@ for i in slavecount:
     list_ip.append(conf['SLAVES'][i]['ipaddr'])
 ip_dupes = [x for n, x in enumerate(list_ip) if x in list_ip[:n]]
 
-# Install and configure master server
+# Install and configure master servers
 for i in range(mastercount):
     hostname = conf['MASTERS'][i]['name']
     ip = conf['MASTERS'][i]['ipaddr']
@@ -53,10 +53,8 @@ for i in range(mastercount):
 
     # Check if the server must be configured as master only or master and slave
     check = 0
-    for i in ip_dupes:
-        if ip == ip_dupes[i]:
-            check = 1
-            break
+    if ip in ip_dupes:
+        check = 1
 
     print("Start Mesos-Master service on " + hostname + "...")
     subprocess.call(['ssh', 'root@' + hostname, 'HOSTNAME=' + hostname])
@@ -69,3 +67,24 @@ for i in range(mastercount):
     subprocess.call(['ssh', 'root@' + hostname, 'CHECK=' + check])
     subprocess.call(['scp', install_master,'root@' + hostname, '/tmp'])
     subprocess.call(['ssh', 'root@' + hostname, 'bash', '/tmp/' + install_master])
+
+# Install and configure agent servers
+for i in range(slavecount):
+    hostname = conf['SLAVES'][i]['name']
+    ip = conf['SLAVES'][i]['ipaddr']
+    id = conf['SLAVES'][i]['id']
+    attributes = conf['SLAVES'][i]['attr']
+    print("Accessing " + hostname + " over ssh...")
+
+    # Check if the server must be configured as master only or master and slave
+    check = 0
+    if ip in ip_dupes:
+        check = 1
+
+    print("Start Mesos-Master service on " + hostname + "...")
+    subprocess.call(['ssh', 'root@' + hostname, 'HOSTNAME=' + hostname])
+    subprocess.call(['ssh', 'root@' + hostname, 'IP=' + ip])
+    subprocess.call(['ssh', 'root@' + hostname, 'ZKADDRESS=' + zkaddress])
+    subprocess.call(['ssh', 'root@' + hostname, 'CHECK=' + check])
+    subprocess.call(['scp', install_master,'root@' + hostname, '/tmp'])
+    subprocess.call(['ssh', 'root@' + hostname, 'bash', '/tmp/' + install_slave])
