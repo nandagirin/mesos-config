@@ -9,11 +9,13 @@
   "SLAVES": [
     {
       "name": "mesos-slave10",
-      "ipaddr": "10.116.139.54"
+      "ipaddr": "10.116.139.54",
+      "attr": "rack_id:1"
     },
     {
       "name": "mesos-slave11",
-      "ipaddr": "10.116.139.20"
+      "ipaddr": "10.116.139.20",
+      "attr": "rack_id:2"
     },
     {
       "name": "mesos-slave12",

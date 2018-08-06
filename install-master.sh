@@ -8,7 +8,7 @@ echo "Installing dependencies"
 sudo apt update
 sudo apt install -y tar wget git
 sudo apt install -y autoconf libtool
-sudo apt -y install build-essential python-dev python-six python-virtualenv libcurl4-nss-dev libsasl2-dev libsasl2-modules maven libapr1-dev libsvn-dev zlib1g-dev iputils-ping
+sudo apt install -y build-essential python-dev python-six python-virtualenv libcurl4-nss-dev libsasl2-dev libsasl2-modules maven libapr1-dev libsvn-dev zlib1g-dev iputils-ping
 echo "Installing dependency: Oracle Java 8"
 sudo apt-add-repository ppa:webupd8team/java
 sudo apt -y update
@@ -41,7 +41,7 @@ echo "MARATHON_MASTER=$ZKADDRESS" | sudo tee -a /etc/default/marathon
 echo "MARATHON_ZK=$ZKMARATHON" | sudo tee -a /etc/default/marathon
 echo "Start Mesos Service"
 sudo systemctl stop mesos-slave
-if [$CHECK -eq 0]
+if [ $CHECK -eq 0 ]
 then
     echo manual | sudo tee /etc/init/mesos-slave.override
 fi
