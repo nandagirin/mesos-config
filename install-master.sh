@@ -1,9 +1,9 @@
 #!/bin/bash -xe
-clear
 echo "***************************************************************"
 echo "** Running version: Ubuntu 16.04 LTS                         **"
 echo "***************************************************************"
 echo "Configuring $HOSTNAME as Mesos master server"
+echo "Set variables"
 echo "Installing dependencies"
 sudo apt update
 sudo apt install -y tar wget git

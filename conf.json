@@ -1,25 +1,30 @@
 {
   "MASTERS": [
     {
-      "name": "mesos-master5",
+      "name": "master-1",
       "id": "1",
-      "ipaddr": "10.116.139.6"
+      "ipaddr": "172.28.128.3",
+      "user": "vagrant"
+    },
+    {
+      "name": "master-2",
+      "id": "2",
+      "ipaddr": "172.28.128.4",
+      "user": "vagrant"
     }
   ],
   "SLAVES": [
     {
-      "name": "mesos-slave10",
-      "ipaddr": "10.116.139.54",
-      "attr": "rack_id:1"
+      "name": "slave-1",
+      "ipaddr": "172.28.128.5",
+      "attr": "rack_id:1",
+      "user": "vagrant"
     },
     {
-      "name": "mesos-slave11",
-      "ipaddr": "10.116.139.20",
-      "attr": "rack_id:2"
-    },
-    {
-      "name": "mesos-slave12",
-      "ipaddr": "10.116.139.61"
+      "name": "slave-2",
+      "ipaddr": "172.28.128.6",
+      "attr": "rack_id:2",
+      "user": "vagrant"
     }
   ]
 }

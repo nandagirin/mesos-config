@@ -5,19 +5,22 @@ import json, sys, os, argparse, subprocess, math
 
 print ("**************************************************")
 print ("**          Tested on Ubuntu 16.04 LTS          **")
-print ("**             Mesos version 1.6.0              **")
+print ("**             Mesos version 1.6.1              **")
 print ("**************************************************")
 
 # Set up option configuration with Parser
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', '-c',
     dest = 'config', help = 'Config written in JSON', required = True)
+parser.add_argument('--username', '-u',
+    dest = 'user', help = 'Username used in the server host', required = False, default = 'root')
 args = parser.parse_args()
 
 # Set config file and bash file
 cfgfile = open(str(os.getcwd()) + "/" + str(args.config))
-install_master = str(os.getcwd()) + "/" + 'install_master.sh'
-install_slave = str(os.getcwd()) + "/" + 'install_slave.sh'
+user = str(args.user)
+install_master = str(os.getcwd()) + "/install-master.sh"
+install_slave = str(os.getcwd()) + "/install-slave.sh"
 conf = json.load(cfgfile)
 
 # Parse JSON
@@ -38,9 +41,9 @@ zkmarathon = zkaddr + '/marathon'
 
 # Search for entries containing similar IP between master and slave
 list_ip = []
-for i in mastercount:
+for i in range(mastercount):
     list_ip.append(conf['MASTERS'][i]['ipaddr'])
-for i in slavecount:
+for i in range(slavecount):
     list_ip.append(conf['SLAVES'][i]['ipaddr'])
 ip_dupes = [x for n, x in enumerate(list_ip) if x in list_ip[:n]]
 
@@ -57,22 +60,27 @@ for i in range(mastercount):
         check = 1
 
     print("Start Mesos-Master service on " + hostname + "...")
-    subprocess.call(['ssh', 'root@' + hostname, 'HOSTNAME=' + hostname])
-    subprocess.call(['ssh', 'root@' + hostname, 'IP=' + ip])
-    subprocess.call(['ssh', 'root@' + hostname, 'QUORUM=' + quorum])
-    subprocess.call(['ssh', 'root@' + hostname, 'ID=' + id])
-    subprocess.call(['ssh', 'root@' + hostname, 'ZKADDRESS=' + zkaddress])
-    subprocess.call(['ssh', 'root@' + hostname, 'ZKMARATHON=' + zkmarathon])
-    subprocess.call(['ssh', 'root@' + hostname, 'ZOOCFG=' + zoocfg])
-    subprocess.call(['ssh', 'root@' + hostname, 'CHECK=' + check])
-    subprocess.call(['scp', install_master,'root@' + hostname, '/tmp'])
-    subprocess.call(['ssh', 'root@' + hostname, 'bash', '/tmp/' + install_master])
-
+    subprocess.call(['scp', 'install-master.sh', user + '@' + ip + ':/tmp'])
+    #subprocess.call(['ssh', '-f', user + '@' + ip, 
+    #    'echo "IP=' + ip + '" | tee /tmp/var;' +
+    #    'echo "HOSTNAME=' + hostname + '" | tee -a /tmp/var;' +
+    #    'echo "QUORUM=' + str(quorum + '" | tee -a /tmp/var;' +
+    #    'echo "ID=' + id + '" | tee -a /tmp/var;' +
+    #    'echo "ZKADDRESS=' + zkaddress + '" | tee -a /tmp/var;' +
+    #    'echo "ZKMARATHON=' + zkmarathon + '" | tee -a /tmp/var;' +
+    #    'echo "ZOOCFG=' + zoocfg + '" | tee -a /tmp/var;' +
+    #    'echo "CHECK=' + str(check) + '" | tee -a /tmp/var;' + 
+    #    'source /tmp/var; bash /tmp/install-master.sh'])
+    
+    subprocess.call(['ssh', '-f', user + '@' + ip, '"HOSTNAME=' + hostname + ';' +
+        'IP=' + ip + ';' + 'QUORUM=' + str(quorum) + ';' + 'ID=' + id + ';' + 'ZKADDRESS=' + zkaddress + ';',
+        'ZKMARATHON=' + zkmarathon + ';' + 'ZOOCFG=' + zoocfg + ';' +  'CHECK=' + str(check) + ';' +
+        'bash /tmp/install-master.sh"'])
+    
 # Install and configure agent servers
 for i in range(slavecount):
     hostname = conf['SLAVES'][i]['name']
     ip = conf['SLAVES'][i]['ipaddr']
-    id = conf['SLAVES'][i]['id']
     attributes = conf['SLAVES'][i]['attr']
     print("Accessing " + hostname + " over ssh...")
 
@@ -82,9 +90,7 @@ for i in range(slavecount):
         check = 1
 
     print("Start Mesos-Master service on " + hostname + "...")
-    subprocess.call(['ssh', 'root@' + hostname, 'HOSTNAME=' + hostname])
-    subprocess.call(['ssh', 'root@' + hostname, 'IP=' + ip])
-    subprocess.call(['ssh', 'root@' + hostname, 'ZKADDRESS=' + zkaddress])
-    subprocess.call(['ssh', 'root@' + hostname, 'CHECK=' + check])
-    subprocess.call(['scp', install_master,'root@' + hostname, '/tmp'])
-    subprocess.call(['ssh', 'root@' + hostname, 'bash', '/tmp/' + install_slave])
+    subprocess.call(['scp', 'install-slave.sh', user + '@' + ip + ':/tmp'])
+    subprocess.call(['ssh', '-f', user + '@' + ip, '"HOSTNAME=' + hostname, ';' +
+        'IP=' + ip + ';' + 'ZKADDRESS=' + zkaddress + ';' + 'CHECK=' + str(check) + ';' +
+        'bash /tmp/install-slave.sh"'])
