@@ -28,7 +28,7 @@ echo $2 | sudo tee /etc/mesos/zk
 echo $3 | sudo tee /etc/zookeeper/conf/myid
 echo "Overwrite zoo.cfg"
 sudo cp /etc/zookeeper/conf/zoo.cfg /etc/zookeeper/conf/zoo.cfg.ori
-sudo cp /tmp/zoo.cfg /etc/zookeeper/conf/
+sudo cp /tmp/zoo.cfg /etc/zookeeper/conf/zoo.cfg
 echo "The Original zoo.cfg is kept safe at zoo.cfg.ori"
 echo "Setting Mesos-Master"
 echo $4 | sudo tee /etc/mesos-master/quorum
@@ -41,10 +41,11 @@ echo "Start Mesos Service"
 sudo systemctl stop mesos-slave.service
 if [ $7 -eq 0 ]
 then
-    echo manual | sudo tee /etc/init/mesos-slave.overr3e
+    echo manual | sudo tee /etc/init/mesos-slave.override
 fi
 sudo systemctl restart zookeeper.service
 sudo systemctl restart mesos-master.service
 sudo systemctl restart marathon.service
 sudo apt -y autoremove
 sudo rm -rf /tmp/*
+echo 'ALL DONE :)'

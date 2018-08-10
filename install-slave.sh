@@ -63,3 +63,4 @@ fi
 sudo systemctl restart mesos-slave
 sudo apt -y autoremove
 sudo rm -rf /tmp/*
+echo 'ALL DONE :)'
