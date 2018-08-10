@@ -3,28 +3,24 @@
     {
       "name": "master-1",
       "id": "1",
-      "ipaddr": "172.28.128.3",
-      "user": "vagrant"
+      "ipaddr": "172.28.128.3"
     },
     {
       "name": "master-2",
       "id": "2",
-      "ipaddr": "172.28.128.4",
-      "user": "vagrant"
+      "ipaddr": "172.28.128.4"
     }
   ],
   "SLAVES": [
     {
       "name": "slave-1",
       "ipaddr": "172.28.128.5",
-      "attr": "rack_id:1",
-      "user": "vagrant"
+      "attr": "rack_id:1"
     },
     {
       "name": "slave-2",
       "ipaddr": "172.28.128.6",
-      "attr": "rack_id:2",
-      "user": "vagrant"
+      "attr": "rack_id:2"
     }
   ]
 }

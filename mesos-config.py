@@ -19,8 +19,6 @@ args = parser.parse_args()
 # Set config file and bash file
 cfgfile = open(str(os.getcwd()) + "/" + str(args.config))
 user = str(args.user)
-install_master = str(os.getcwd()) + "/install-master.sh"
-install_slave = str(os.getcwd()) + "/install-slave.sh"
 conf = json.load(cfgfile)
 
 # Parse JSON
@@ -31,13 +29,22 @@ quorum = int(math.ceil(mastercount / 2))
 
 # Declare variables needed (zookeeper related)
 zkaddr = conf['MASTERS'][0]['ipaddr'] + ':2181'
-zoocfg = 'server.1=' + conf['MASTERS'][0]['ipaddr'] + ':2888:3888'
 if mastercount > 1:
     for i in range(mastercount - 1):
         zkaddr = zkaddr + ',' + conf['MASTERS'][i + 1]['ipaddr'] + ':2181'
-        zoocfg = zoocfg + '\n' + 'server.' + str(i+2) + '=' + conf['MASTERS'][i+1]['ipaddr'] + ':2888:3888'
-zkaddress = zkaddr + '/mesos'
-zkmarathon = zkaddr + '/marathon'
+zkaddress = 'zk://' + zkaddr + '/mesos'
+zkmarathon = 'zk://' + zkaddr + '/marathon'
+
+# Make zoo.cfg file to be sent to each host
+subprocess.call(['mkdir', 'tmp'])
+f = open("tmp/zoo.cfg", "w+")
+f.write("tickTime=2000\n")
+f.write("initLimit=10\n")
+f.write("syncLimit=5\n")
+f.write("dataDir=/var/lib/zookeeper\n")
+f.write("clientPort=2181\n")
+for i in range(mastercount):
+    f.write("server." + str(i+1) + "=" + conf['MASTERS'][i]['ipaddr'] + ":2888:3888\n")
 
 # Search for entries containing similar IP between master and slave
 list_ip = []
@@ -48,10 +55,12 @@ for i in range(slavecount):
 ip_dupes = [x for n, x in enumerate(list_ip) if x in list_ip[:n]]
 
 # Install and configure master servers
+master_cmd = 'bash /tmp/install-master.sh'
 for i in range(mastercount):
+
     hostname = conf['MASTERS'][i]['name']
     ip = conf['MASTERS'][i]['ipaddr']
-    id = conf['MASTERS'][i]['id']
+    identity = conf['MASTERS'][i]['id']
     print("Accessing " + hostname + " over ssh...")
 
     # Check if the server must be configured as master only or master and slave
@@ -60,24 +69,12 @@ for i in range(mastercount):
         check = 1
 
     print("Start Mesos-Master service on " + hostname + "...")
-    subprocess.call(['scp', 'install-master.sh', user + '@' + ip + ':/tmp'])
-    #subprocess.call(['ssh', '-f', user + '@' + ip, 
-    #    'echo "IP=' + ip + '" | tee /tmp/var;' +
-    #    'echo "HOSTNAME=' + hostname + '" | tee -a /tmp/var;' +
-    #    'echo "QUORUM=' + str(quorum + '" | tee -a /tmp/var;' +
-    #    'echo "ID=' + id + '" | tee -a /tmp/var;' +
-    #    'echo "ZKADDRESS=' + zkaddress + '" | tee -a /tmp/var;' +
-    #    'echo "ZKMARATHON=' + zkmarathon + '" | tee -a /tmp/var;' +
-    #    'echo "ZOOCFG=' + zoocfg + '" | tee -a /tmp/var;' +
-    #    'echo "CHECK=' + str(check) + '" | tee -a /tmp/var;' + 
-    #    'source /tmp/var; bash /tmp/install-master.sh'])
-    
-    subprocess.call(['ssh', '-f', user + '@' + ip, '"HOSTNAME=' + hostname + ';' +
-        'IP=' + ip + ';' + 'QUORUM=' + str(quorum) + ';' + 'ID=' + id + ';' + 'ZKADDRESS=' + zkaddress + ';',
-        'ZKMARATHON=' + zkmarathon + ';' + 'ZOOCFG=' + zoocfg + ';' +  'CHECK=' + str(check) + ';' +
-        'bash /tmp/install-master.sh"'])
+    subprocess.call(['scp', 'install-master.sh', 'tmp/zoo.cfg', user + '@' + ip + ':/tmp;'])
+    subprocess.call(['ssh', user + '@' + ip, master_cmd, 
+        hostname, zkaddress, identity, str(quorum), ip, zkmarathon, str(check)])
     
 # Install and configure agent servers
+slave_cmd = 'bash /tmp/install-slave.sh'
 for i in range(slavecount):
     hostname = conf['SLAVES'][i]['name']
     ip = conf['SLAVES'][i]['ipaddr']
@@ -91,6 +88,7 @@ for i in range(slavecount):
 
     print("Start Mesos-Master service on " + hostname + "...")
     subprocess.call(['scp', 'install-slave.sh', user + '@' + ip + ':/tmp'])
-    subprocess.call(['ssh', '-f', user + '@' + ip, '"HOSTNAME=' + hostname, ';' +
-        'IP=' + ip + ';' + 'ZKADDRESS=' + zkaddress + ';' + 'CHECK=' + str(check) + ';' +
-        'bash /tmp/install-slave.sh"'])
+    subprocess.call(['ssh', user + '@' + ip, slave_cmd, 
+        str(check), zkaddress, ip, hostname, attributes])
+
+subprocess.call(['rm', '-Rf', 'tmp'])
