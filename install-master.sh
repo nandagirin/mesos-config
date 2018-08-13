@@ -15,7 +15,7 @@ echo "Installing dependency: Oracle Java 8"
 sudo apt-add-repository -y ppa:webupd8team/java
 sudo apt -y update
 echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
-sudo apt -y install oracle-java8-installer
+sudo apt -y install oracle-java8-set-default
 echo "Installing Mesosphere"
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF
 DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]')

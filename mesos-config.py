@@ -1,12 +1,46 @@
 #!/usr/bin/python3
 
 from subprocess import call
-import json, sys, os, argparse, subprocess, math
+import json, sys, os, argparse, subprocess, math, threading
 
 print ("**************************************************")
 print ("**          Tested on Ubuntu 16.04 LTS          **")
 print ("**             Mesos version 1.6.0              **")
 print ("**************************************************")
+
+# Function to install Mesos-master in parallel
+def master(i):
+    hostname = conf['MASTERS'][i]['name']
+    ip = conf['MASTERS'][i]['ipaddr']
+    identity = conf['MASTERS'][i]['id']
+    print("Accessing " + hostname + " over ssh...")
+
+    # Check if the server must be configured as master only or master and slave
+    check = 0
+    if ip in ip_dupes:
+        check = 1
+
+    print("Start Mesos-Master service on " + hostname + "...")
+    subprocess.call(['scp', 'install-master.sh', '/tmp/zoo.cfg', user + '@' + ip + ':/tmp;'])
+    subprocess.call(['ssh', user + '@' + ip, master_cmd, 
+        hostname, zkaddress, identity, str(quorum), ip, zkmarathon, str(check)])
+
+# Function to install Mesos-slave in parallel
+def slave(i):
+    hostname = conf['SLAVES'][i]['name']
+    ip = conf['SLAVES'][i]['ipaddr']
+    attributes = conf['SLAVES'][i]['attr']
+    print("Accessing " + hostname + " over ssh...")
+
+    # Check if the server must be configured as master only or master and slave
+    check = 0
+    if ip in ip_dupes:
+        check = 1
+
+    print("Start Mesos-Slave service on " + hostname + "...")
+    subprocess.call(['scp', 'install-slave.sh', user + '@' + ip + ':/tmp'])
+    subprocess.call(['ssh', user + '@' + ip, slave_cmd, 
+        str(check), zkaddress, ip, hostname, attributes])
 
 # Set up option configuration with Parser
 parser = argparse.ArgumentParser()
@@ -56,39 +90,22 @@ ip_dupes = [x for n, x in enumerate(list_ip) if x in list_ip[:n]]
 
 # Install and configure master servers
 master_cmd = 'bash /tmp/install-master.sh'
+threads = []
 for i in range(mastercount):
-
-    hostname = conf['MASTERS'][i]['name']
-    ip = conf['MASTERS'][i]['ipaddr']
-    identity = conf['MASTERS'][i]['id']
-    print("Accessing " + hostname + " over ssh...")
-
-    # Check if the server must be configured as master only or master and slave
-    check = 0
-    if ip in ip_dupes:
-        check = 1
-
-    print("Start Mesos-Master service on " + hostname + "...")
-    subprocess.call(['scp', 'install-master.sh', '/tmp/zoo.cfg', user + '@' + ip + ':/tmp;'])
-    subprocess.call(['ssh', user + '@' + ip, master_cmd, 
-        hostname, zkaddress, identity, str(quorum), ip, zkmarathon, str(check)])
+    t = threading.Thread(target=master, args=(i, ))
+    t.start()
+    threads.append(t)
+for t in threads:
+    t.join()
     
 # Install and configure agent servers
 slave_cmd = 'bash /tmp/install-slave.sh'
+threads = []
 for i in range(slavecount):
-    hostname = conf['SLAVES'][i]['name']
-    ip = conf['SLAVES'][i]['ipaddr']
-    attributes = conf['SLAVES'][i]['attr']
-    print("Accessing " + hostname + " over ssh...")
-
-    # Check if the server must be configured as master only or master and slave
-    check = 0
-    if ip in ip_dupes:
-        check = 1
-
-    print("Start Mesos-Slave service on " + hostname + "...")
-    subprocess.call(['scp', 'install-slave.sh', user + '@' + ip + ':/tmp'])
-    subprocess.call(['ssh', user + '@' + ip, slave_cmd, 
-        str(check), zkaddress, ip, hostname, attributes])
+    t = threading.Thread(target=slave, args=(i, ))
+    t.start()
+    threads.append(t)
+for t in threads:
+    t.join()
 
 subprocess.call(['sudo', 'rm', '-rf', '/tmp/zoo.cfg'])
