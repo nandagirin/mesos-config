@@ -19,11 +19,12 @@ def master(i):
     check = 0
     if ip in ip_dupes:
         check = 1
-
+    master_cmd = 'ssh ' + user + '@' + ip + ' bash /tmp/install-master.sh ' + hostname + ' ' + zkaddress + ' ' + identity + ' ' + str(quorum) + ' ' + ip + ' ' + zkmarathon + ' ' + str(check)
     print("Start Mesos-Master service on " + hostname + "...")
     subprocess.call(['scp', 'install-master.sh', '/tmp/zoo.cfg', user + '@' + ip + ':/tmp;'])
-    subprocess.call(['ssh', user + '@' + ip, master_cmd, 
-        hostname, zkaddress, identity, str(quorum), ip, zkmarathon, str(check)])
+    subprocess.call(['gnome-terminal', '--', '/bin/bash', '-c', master_cmd])
+    #subprocess.call(['ssh', user + '@' + ip, master_cmd, 
+    #    hostname, zkaddress, identity, str(quorum), ip, zkmarathon, str(check)])
 
 # Function to install Mesos-slave in parallel
 def slave(i):
@@ -36,11 +37,12 @@ def slave(i):
     check = 0
     if ip in ip_dupes:
         check = 1
-
+    slave_cmd = 'ssh ' + user + '@' + ip + ' bash /tmp/install-slave.sh ' + str(check) + ' ' + zkaddress + ' ' + ip + ' ' + hostname + ' ' + attributes
     print("Start Mesos-Slave service on " + hostname + "...")
     subprocess.call(['scp', 'install-slave.sh', user + '@' + ip + ':/tmp'])
-    subprocess.call(['ssh', user + '@' + ip, slave_cmd, 
-        str(check), zkaddress, ip, hostname, attributes])
+    subprocess.call(['gnome-terminal', '--', '/bin/bash', '-c', slave_cmd])
+    #subprocess.call(['ssh', user + '@' + ip, slave_cmd, 
+    #    str(check), zkaddress, ip, hostname, attributes])
 
 # Set up option configuration with Parser
 parser = argparse.ArgumentParser()
@@ -89,7 +91,6 @@ for i in range(slavecount):
 ip_dupes = [x for n, x in enumerate(list_ip) if x in list_ip[:n]]
 
 # Install and configure master servers
-master_cmd = 'bash /tmp/install-master.sh'
 threads = []
 for i in range(mastercount):
     t = threading.Thread(target=master, args=(i, ))
@@ -99,8 +100,6 @@ for t in threads:
     t.join()
     
 # Install and configure agent servers
-slave_cmd = 'bash /tmp/install-slave.sh'
-threads = []
 for i in range(slavecount):
     t = threading.Thread(target=slave, args=(i, ))
     t.start()

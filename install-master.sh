@@ -49,3 +49,5 @@ sudo systemctl restart marathon.service
 sudo apt -y autoremove
 sudo rm -rf /tmp/*
 echo 'ALL DONE :)'
+echo 'Press enter to exit'
+read
