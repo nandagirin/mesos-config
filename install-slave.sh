@@ -3,7 +3,7 @@ echo "***************************************************************"
 echo "** Running version: Ubuntu 16.04 LTS                         **"
 echo "***************************************************************"
 echo "Configuring $4 as Mesos slave server"
-echo "Installing dependencies"
+echo "Installing dependencies" 
 sudo dpkg --configure -a
 sudo apt update
 sudo apt install -y tar wget git
