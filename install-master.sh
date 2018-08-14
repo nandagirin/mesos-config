@@ -76,6 +76,10 @@ else
 fi
 sudo apt -y autoremove
 sudo rm -rf /tmp/*
-echo 'ALL DONE :)'
+if [ $7 -eq 1 ]
+then
+    echo "Master and slave configuration of server $1 done"
+else
+    echo "Master configuration of server $1 done"
 echo 'Press enter to exit'
 read

@@ -58,6 +58,6 @@ echo manual | sudo tee /etc/init/zookeeper.override
 sudo systemctl restart mesos-slave
 sudo apt -y autoremove
 sudo rm -rf /tmp/*
-echo 'ALL DONE :)'
+echo "Slave configuration of server $4 done"
 echo 'Press enter to exit'
 read
