@@ -16,15 +16,23 @@ def master(i):
     print("Accessing " + hostname + " over ssh...")
 
     # Check if the server must be configured as master only or master and slave
-    check = 0
-    if ip in ip_dupes:
-        check = 1
-    master_cmd = 'ssh ' + user + '@' + ip + ' bash /tmp/install-master.sh ' + hostname + ' ' + zkaddress + ' ' + identity + ' ' + str(quorum) + ' ' + ip + ' ' + zkmarathon + ' ' + str(check)
     print("Start Mesos-Master service on " + hostname + "...")
-    subprocess.call(['scp', 'install-master.sh', '/tmp/zoo.cfg', user + '@' + ip + ':/tmp;'])
-    subprocess.call(['gnome-terminal', '--', '/bin/bash', '-c', master_cmd])
-    #subprocess.call(['ssh', user + '@' + ip, master_cmd, 
-    #    hostname, zkaddress, identity, str(quorum), ip, zkmarathon, str(check)])
+    if ip in ip_dupes: # Master and slave
+        check = 1
+        for attr in conf['SLAVES']:
+            if ip == attr['ipaddr']:
+                attributes = attr['attr']
+                break
+        master_cmd = 'ssh ' + user + '@' + ip + ' bash /tmp/install-master.sh ' + hostname + ' ' + zkaddress + ' ' + identity + ' ' + str(quorum) + ' ' + ip + ' ' + zkmarathon + ' ' + str(check) + ' ' + attributes 
+        subprocess.call(['scp', 'install-master.sh', '/tmp/zoo.cfg', user + '@' + ip + ':/tmp;'])
+        subprocess.call(['gnome-terminal', '--', '/bin/bash', '-c', master_cmd])   
+        return 0  
+    else: # Master only
+        check = 0
+        master_cmd = 'ssh ' + user + '@' + ip + ' bash /tmp/install-master.sh ' + hostname + ' ' + zkaddress + ' ' + identity + ' ' + str(quorum) + ' ' + ip + ' ' + zkmarathon + ' ' + str(check)  
+        subprocess.call(['scp', 'install-master.sh', '/tmp/zoo.cfg', user + '@' + ip + ':/tmp;'])
+        subprocess.call(['gnome-terminal', '--', '/bin/bash', '-c', master_cmd])
+        return 0
 
 # Function to install Mesos-slave in parallel
 def slave(i):
@@ -33,17 +41,18 @@ def slave(i):
     attributes = conf['SLAVES'][i]['attr']
     print("Accessing " + hostname + " over ssh...")
 
-    # Check if the server must be configured as master only or master and slave
+    # Check if the server must be configured as slave only or master and slave
     check = 0
-    if ip in ip_dupes:
+    if ip in ip_dupes: # Already configured in master configuration process
         check = 1
+        return 0
     slave_cmd = 'ssh ' + user + '@' + ip + ' bash /tmp/install-slave.sh ' + str(check) + ' ' + zkaddress + ' ' + ip + ' ' + hostname + ' ' + attributes
     print("Start Mesos-Slave service on " + hostname + "...")
     subprocess.call(['scp', 'install-slave.sh', user + '@' + ip + ':/tmp'])
     subprocess.call(['gnome-terminal', '--', '/bin/bash', '-c', slave_cmd])
-    #subprocess.call(['ssh', user + '@' + ip, slave_cmd, 
-    #    str(check), zkaddress, ip, hostname, attributes])
+    return 0
 
+# MAIN PROGRAM
 # Set up option configuration with Parser
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', '-c',

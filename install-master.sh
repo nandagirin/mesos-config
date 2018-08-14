@@ -38,14 +38,42 @@ echo "Configuring Marathon"
 echo "MARATHON_MASTER=$2" | sudo tee /etc/default/marathon
 echo "MARATHON_ZK=$6" | sudo tee -a /etc/default/marathon
 echo "Start Mesos Service"
-sudo systemctl stop mesos-slave.service
-if [ $7 -eq 0 ]
-then
-    echo manual | sudo tee /etc/init/mesos-slave.override
-fi
 sudo systemctl restart zookeeper.service
 sudo systemctl restart mesos-master.service
 sudo systemctl restart marathon.service
+if [ $7 -eq 0 ]
+then
+    sudo systemctl stop mesos-slave.service
+    echo manual | sudo tee /etc/init/mesos-slave.override
+else
+    echo "Set up Mesos-slave configuration"
+    if [ -x "$(command -v docker)" ]; then
+        echo "Docker has been installed."
+    else
+        echo "Docker has not been installed. Proceed to install Docker."
+        sudo apt install \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            software-properties-common
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+        sudo apt-key fingerprint 0EBFCD88
+        sudo add-apt-repository \
+            "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+            $(lsb_release -cs) \
+            stable"
+        sudo apt update
+        sudo apt -y install docker-ce
+        sudo usermod -aG docker $USER
+    fi
+    echo $5 | sudo tee /etc/mesos-slave/ip
+    echo $1 | sudo tee /etc/mesos-slave/hostname
+    echo $8 | sudo tee /etc/mesos-slave/attributes
+    echo "ports:[1-65535]" | sudo tee /etc/mesos-slave/resources
+    echo "docker,mesos" | sudo tee /etc/mesos-slave/containerizers
+    echo "5mins" | sudo tee /etc/mesos-slave/executor_registration_timeout
+    sudo systemctl restart mesos-slave.service
+fi
 sudo apt -y autoremove
 sudo rm -rf /tmp/*
 echo 'ALL DONE :)'

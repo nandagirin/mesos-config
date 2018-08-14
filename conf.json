@@ -21,6 +21,16 @@
       "name": "slave-2",
       "ipaddr": "172.28.128.6",
       "attr": "rack_id:2"
+    },
+    {
+      "name": "master-1",
+      "ipaddr": "172.28.128.3",
+      "attr": "rack_id:1"
+    },
+    {
+      "name": "master-2",
+      "ipaddr": "172.28.128.4",
+      "attr": "rack_id:2"
     }
   ]
 }
