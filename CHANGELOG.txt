@@ -1,0 +1,3 @@
+ver 1.1:
+    - thread feature so the configuration process now run in parallel
+    - master server that also configured as slave is now processed within the master configuration process
