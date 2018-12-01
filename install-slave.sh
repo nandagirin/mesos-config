@@ -53,7 +53,7 @@ echo "docker,mesos" | sudo tee /etc/mesos-slave/containerizers
 echo "5mins" | sudo tee /etc/mesos-slave/executor_registration_timeout
 echo manual | sudo tee /etc/init/mesos-master.override
 sudo systemctl stop mesos-master
-sudo sytemctl stop zookeeper
+sudo systemctl stop zookeeper
 echo manual | sudo tee /etc/init/zookeeper.override
 sudo systemctl restart mesos-slave
 sudo apt -y autoremove
